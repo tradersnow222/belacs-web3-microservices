@@ -1,0 +1,155 @@
+<!-- just some examples of calling /getSingleAllowance, /getAllAllowance -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Allowance</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <script>
+        // getSingleAllowance is at the endpoint /v1.0/:chainID/getSingleAllowance
+        // it takes in 2 parameters: owner and token
+        // it returns the allowance of the owner for the token
+        function getSingleAllowance() {
+
+            var owner = document.getElementById("owner").value;
+            var token = document.getElementById("token").value;
+            var url = "/v1.0/" + chainID + "/getSingleAllowance?owner=" + owner + "&token=" + token;
+            $.get(url, function(data, status){
+                document.getElementById("result").innerHTML = data;
+            });
+        }
+
+        // getAllAllowances is at the endpoint /v1.0/:chainID/getAllAllowances
+        // it takes in 1 parameter: address
+        // we want to display the allowances in a table grouped by token
+        function getAllAllowances() {
+            var address = document.getElementById("ownerAllAllowance").value;
+            var url = "/v1.0/" + chainID + "/getAllAllowances?address=" + address;
+            $.get(url, function(data, status){
+                var allowances = data.details.allowances;
+                var table = "<table class='table table-striped'><thead><tr><th>Token</th><th>Spender</th><th>Allowance</th><th>Block Number</th></tr></thead><tbody>";
+                for (var owner in allowances) {
+                    for (var token in allowances[owner]) {
+                        table += "<tr><td>" + token + "</td><td>" + owner + "</td><td>" + allowances[owner][token].allowance.hex + "</td><td>" + allowances[owner][token].blockNumber + "</td></tr>";
+                    }
+                }
+                table += "</tbody></table>";
+                document.getElementById("result").innerHTML = table;
+            });
+        }
+
+    </script>
+</head>
+
+
+<body>
+    <!-- short description -->
+    <div class="container">
+        <h2>Allowance</h2>
+        <p>Allowance is the amount of tokens that an owner has approved to be spent by a spender.</p>
+        <p>For example, if Alice approves Bob to spend 100 tokens, then Bob can spend 100 tokens on Alice's behalf.</p>
+        <p>Allowance is used in the ERC20 standard.</p>
+    </div>
+    <!-- chain id selector drop down for the entire page -->
+    <!-- supports 1, 56, 137 and "custom" -->
+    <!-- when custom is selected then also show a text field -->
+    <div class="container">
+        <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Select Chain ID
+            <span class="caret"></span></button>
+            <ul class="dropdown-menu">
+                <li><a href="#" onclick="chainID = 1">1</a></li>
+                <li><a href="#" onclick="chainID = 56">56</a></li>
+                <li><a href="#" onclick="chainID = 137">137</a></li>
+                <li><a href="#" onclick="chainID = 'custom'">Custom</a></li>
+            </ul>
+        </div>
+        <!-- show the chain ID selected -->
+        <p>Chain ID: <span id="chainID"></span></p>
+        <!-- show the custom chain ID input -->
+        <div id="customChainID" style="display:none">
+            <input type="text" id="customChainIDInput" placeholder="Enter RPC">
+        </div>
+    </div>
+    <!-- we have 2 tabs here for the 2 different API calls -->
+    <div>
+        <ul class="nav nav-tabs">
+            <li class="active"><a
+                    data-toggle="tab"
+                    href="#getSingleAllowance">getSingleAllowance</a></li>
+            <li><a
+                    data-toggle="tab"
+                    href="#getAllAllowances">getAllAllowances</a></li>
+        </ul>
+    </div>
+    <!-- getSingleAllowance tab -->
+    <div class="tab-content">
+        <div id="getSingleAllowance" class="tab-pane fade in active">
+            <div class="container">
+                <h3>getSingleAllowance</h3>
+                <p>getSingleAllowance is at the endpoint /v1.0/:chainID/getSingleAllowance</p>
+                <p>it takes in 2 parameters: owner and token</p>
+                <p>it returns the allowance of the owner for the token</p>
+                <p>For example, if Alice approves Bob to spend 100 tokens, then Bob can spend 100 tokens on Alice's behalf.</p>
+                <p>Allowance is used in the ERC20 standard.</p>
+            </div>
+            <div class="container">
+                <label for="owner">Your Address:</label>
+                <input type="text" id="owner" name="owner">
+                <label for="token">token:</label>
+                <input type="text" id="token" name="token">
+                <button type="button" onclick="getSingleAllowance()">Submit</button>
+            </div>
+        </div>
+
+        <!-- getAllAllowances tab -->
+        <div id="getAllAllowances" class="tab-pane fade">
+            <div class="container">
+                <h3>getAllAllowances</h3>
+                <p>getAllAllowances is at the endpoint /v1.0/:chainID/getAllAllowances</p>
+                <p>it takes in 1 parameter: owner</p>
+                <p>it returns the allowance of the owner for all tokens</p>
+                <p>For example, if Alice approves Bob to spend 100 tokens, then Bob can spend 100 tokens on Alice's behalf.</p>
+                <p>Allowance is used in the ERC20 standard.</p>
+            </div>
+            <div class="container">
+                <label for="owner">Your Address:</label>
+                <input type="text" id="ownerAllAllowance" name="owner">
+                <button type="button" onclick="getAllAllowances()">Submit</button>
+            </div>
+        </div>
+    </div>
+
+
+    <br>
+    <!-- result -->
+    <div class="container">
+        <h2>Result</h2>
+        <p id="result"></p>
+    </div>
+
+
+    <script>
+        // listen for the chainID dropdown to change the chainID variable
+        // and show the custom chain ID input if the chainID is "custom"
+        var chainID = 1;
+        var dropdown = document.getElementsByClassName("dropdown-menu")[0];
+        dropdown.addEventListener("click", function(event) {
+            chainID = event.target.text;
+            document.getElementById("chainID").innerHTML = chainID;
+            console.log(chainID, " has been selected");
+            if (chainID == "Custom") {
+                document.getElementById("customChainID").style.display = "block";
+            } else {
+                document.getElementById("customChainID").style.display = "none";
+            }
+        });
+    </script>
+
+
+
+</body>
