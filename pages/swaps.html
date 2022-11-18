@@ -69,7 +69,7 @@
                     <!-- first row, the left align is the "you sell" hyperlink the rigth align is "Balance" -->
                     <div class="row">
                         <div class="col-sm-3">
-                            <a href="#">You Sell</a>
+                            <a target="_blank" id="you-sell" href="#">You Sell</a>
                         </div>
                         <div class="col-sm-9">
                             <a href="#">Balance</a>
@@ -79,7 +79,7 @@
                     <div class="row">
                         <div class="col-sm-3">
                             <div class="dropdown">
-                                <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Select Token
+                                <button id="token-button-sell" class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Select Token
                                 <span class="caret"></span></button>
                                 <ul class="dropdown-menu" id="token-list-selector-sell">
                                     <!-- javascript will fill this -->
@@ -108,7 +108,7 @@
                 <div class="widget-buy">
                     <div class="row">
                         <div class="col-sm-3">
-                            <a href="#">You Buy</a>
+                            <a target="_blank" id="you-buy" href="#">You Buy</a>
                         </div>
                         <div class="col-sm-9">
                             <a href="#">Balance</a>
@@ -117,7 +117,7 @@
                     <div class="row">
                         <div class="col-sm-3">
                             <div class="dropdown">
-                                <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Select Token
+                                <button id="token-button-buy" class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Select Token
                                 <span class="caret"></span></button>
                                 <ul class="dropdown-menu" id="token-list-selector-buy">
                                     <!-- javascript will fill this -->
@@ -134,7 +134,7 @@
                 
                 <!-- lastly we'll have a "connect wallet" button that will bring up a popup asking for a wallet. Once there's a valid wallet, it will change to the "swap" button -->
                 <div class="widget-connect">
-                    <button type="button" class="btn btn-primary" id="connectButton">Connect Wallet</button>
+                    <button type="button" class="btn btn-primary" id="connectButton">Connect Public Address</button>
                 </div>
                 <!-- disconnect wallet button, not visible by default -->
                 <div class="widget-disconnect">
@@ -288,11 +288,171 @@
 
     </style>
     <script>
-        // listen for the dropdown button to be clicked and change the text to the selected network
+
+        function searchTokenListSell()
+        {
+            // Declare variables
+            var input, filter, ul, li, a, i, txtValue;
+            input = document.getElementById('token-search-sell');
+            filter = input.value.toUpperCase();
+            ul = document.getElementById("token-list-selector-sell");
+            li = ul.getElementsByTagName('option');
+
+            // Loop through all list items, and hide those who don't match the search query
+            for (i = 0; i < li.length; i++) {
+                 // Loop through all list items, and hide those who don't match the search query
+                 if (filter.length == 42) {
+                    // if it's an address, check if the li[i].value matches
+                    txtValue = li[i].value.toUpperCase();
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        li[i].style.display = "";
+                        li[i].style.visibility = "visible";
+                    } else {
+                        li[i].style.display = "none";
+                        li[i].style.visibility = "hidden";
+                    }
+                } else {
+                    // if it's not an address, check if the li[i].text matches
+                    txtValue = li[i].text.toUpperCase();
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        li[i].style.display = "";
+                        li[i].style.visibility = "visible";
+                    } else {
+                        li[i].style.display = "none";
+                        li[i].style.visibility = "hidden";
+                    }
+                 }
+            }
+        }
+
+        function searchTokenListBuy()
+        {
+            // Declare variables
+            var input, filter, ul, li, a, i, txtValue;
+            input = document.getElementById('token-search-buy');
+            filter = input.value.toUpperCase();
+            ul = document.getElementById("token-list-selector-buy");
+            li = ul.getElementsByTagName('option');
+            // Loop through all list items, and hide those who don't match the search query
+            for (i = 0; i < li.length; i++) {
+                // check if the search term is the token symbol or an address
+                if(filter.length == 42){
+                    // if it's an address, check if the address matches
+                    txtValue = li[i].value.toUpperCase();
+
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        li[i].style.display = "";
+                        li[i].style.visibility = "visible";
+                    } else {
+                        li[i].style.display = "none";
+                        li[i].style.visibility = "hidden";
+                    }
+                } else {
+                    // if it's not an address, check if the symbol matches
+                    txtValue = li[i].innerText.toUpperCase();
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        li[i].style.display = "";
+                        li[i].style.visibility = "visible";
+                    } else {
+                        li[i].style.display = "none";
+                        li[i].style.visibility = "hidden";
+                    }
+                }
+            }
+        }
+
+        function populateTokenDropdown(tokenlist)
+        {
+            // expected tokenlist will look like
+            // {"0x0327112423f3a68efdf1fcf402f6c5cb9f7c33fd":{"symbol":"BTC++","name":"PieDAO BTC++","decimals":18,"address":"0x0327112423f3a68efdf1fcf402f6c5cb9f7c33fd","logoURI":"https://tokens.1inch.io/0x0327112423f3a68efdf1fcf402f6c5cb9f7c33fd.png","tags":["tokens","PEG:BTC"]},"0x04fa0d235c4abf4bcf4787af4cf447de572ef828":{"symbol":"UMA","name":"UMA Voting Token v1","decimals":18,"address":"0x04fa0d235c4abf4bcf4787af4cf447de572ef828","logoURI":"https://tokens.1inch.io/0x04fa0d235c4abf4bcf4787af4cf447de572ef828.png","tags":["tokens"]}}
+            // we want to populate the dropdown with the symbol and address along with a search bar at the top of the token list
+            let dropdownBuy = document.getElementById("token-list-selector-buy");
+            let dropdownSell = document.getElementById("token-list-selector-sell");
+            // clear the dropdown
+            dropdownBuy.innerHTML = "";
+            dropdownSell.innerHTML = "";
+
+            // add a search bar
+            let searchbar_sell = document.createElement("input");
+            searchbar_sell.setAttribute("type", "text");
+            searchbar_sell.setAttribute("id", "token-search-sell");
+            searchbar_sell.setAttribute("onkeyup", "searchTokenListSell()");
+            searchbar_sell.setAttribute("placeholder", "Search for tokens...");
+            dropdownSell.appendChild(searchbar_sell);
+            let searchbar_buy = document.createElement("input");
+            searchbar_buy.setAttribute("type", "text");
+            searchbar_buy.setAttribute("id", "token-search-buy");
+            searchbar_buy.setAttribute("onkeyup", "searchTokenListBuy()");
+            searchbar_buy.setAttribute("placeholder", "Search for tokens...");
+            dropdownBuy.appendChild(searchbar_buy);
+
+            // add a divider
+            let divider_sell = document.createElement("hr");
+            dropdownSell.appendChild(divider_sell);
+            let divider_buy = document.createElement("hr");
+            dropdownBuy.appendChild(divider_buy);
+
+
+            // add the tokens for the sell dropdown
+            for (const [key, value] of Object.entries(tokenlist)) {
+                // create a new option element
+                let option = document.createElement("option");
+                // set the value to the address
+                option.setAttribute("value", key);
+                // set the text to the symbol
+                option.text = value.symbol;
+                // when the option is clicked, set the text of the button to the symbol, also edit the "you sell" hyperlink to https://blockscan.com/address/ + address
+                option.setAttribute("onclick", "document.getElementById('token-button-sell').innerHTML = this.text; document.getElementById('you-sell').href = 'https://blockscan.com/address/' + this.value;");
+                // add the option to the dropdown
+                dropdownSell.appendChild(option);
+            }
+            // add the tokens for the buy dropdown
+            for (const [key, value] of Object.entries(tokenlist)) {
+                // create a new option element
+                let option = document.createElement("option");
+                // set the value to the address
+                option.setAttribute("value", key);
+                // set the text to the symbol
+                option.text = value.symbol;
+                // when the option is clicked, set the text of the button to the symbol
+                option.setAttribute("onclick", "document.getElementById('token-button-buy').innerHTML = this.text; document.getElementById('you-buy').href = 'https://blockscan.com/address/' + this.value;");
+                // add the option to the dropdown
+                dropdownBuy.appendChild(option);
+            }
+
+        }
+
+
+        // listen for the chain dropdown button to be clicked and change the text to the selected network
         $('.dropdown-menu li a').click(function(){
             var selText = $(this).text();
             $(this).parents('.dropdown').find('.dropdown-toggle').html(selText+' <span class="caret"></span>');
             // if we wanted to we could change the style of the button to match the network selected
+            // TODO: change the style of the button to match the network selected
+
+            // this will handle the token dropdown, we'll pull the token lists from https://tokens.1inch.io/v1.1/${chainID}
+            // and populate the dropdown with the token names and symbols along with a "search" function. we'll call the API when the network is changed if local storage is empty
+            let url = `https://tokens.1inch.io/v1.1/${chainID}`;
+            // first check if we have the token list in local storage
+            let tokenList = localStorage.getItem(`tokenList-${chainID}`);
+            if(tokenList){
+                // we have the token list in local storage, parse it and populate the dropdown
+                tokenList = JSON.parse(tokenList);
+                populateTokenDropdown(tokenList);
+            } else {
+                // we don't have the token list in local storage, fetch it from the API
+                fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    // store the token list in local storage
+                    localStorage.setItem(`tokenList-${chainID}`, JSON.stringify(data));
+                    // populate the dropdown
+                    populateTokenDropdown(data);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+            }
         });
 
         // this is the javascript code to handle the "widget-connect" button and replace it with a "swap" button once a wallet is connected
@@ -324,6 +484,8 @@
             // clear the wallet address
             $('#address').html("");
         })
+
+
 
     </script>
 </html>
