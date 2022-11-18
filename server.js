@@ -243,45 +243,34 @@ function getAllAllowances(req, res) {
         });
     } else {
         provider.getBlockNumber().then((latestBlock) => {
-            // now we can build a filter to get all event logs from the first transaction to the latest block
             const filter = {
                 fromBlock: 'earliest', // WARNING INFURA CAN ONLY HANDLE 10K EVENT LOGS RETURNED, BOTS MAY HAVE MORE THAN THIS LIMIT
                 toBlock: latestBlock,
                 topics: [
                     ethers.utils.id("Approval(address,address,uint256)"), // topic encoded
                     ethers.utils.hexZeroPad(address, 32), // the owner
-                    null // this would be the spender, we can leave it as null or even nothing at all.
+                    null // the spender
                 ],
-                address: address
             }
-
-            // now we can get all the logs
             provider.getLogs(filter).then((logs) => {
-                // now we need to go through the logs and take the latest allowance for each "address"
-                let latestAllowances = {}; // this will be a tokenAddress : [{spender: address, allowance: number, blockNumber: number}, ...]
-                const parsedLogs = logs.forEach((log) => {
-                    // get the token address
+                let latestAllowances = {};
+                logs.forEach((log) => {
                     const tokenAddress = log.address;
-                    // get the spender address
                     const spenderAddress = "0x" + log.topics[2].slice(26);
-                    // get the allowance
                     const allowance = BigNumber.from(log.data);
-                    // get the block number
                     const blockNumber = log.blockNumber;
-                    
-                    // check if the token address is already in the latestAllowances object
-                    if(latestAllowances[tokenAddress] === undefined){
-                        // if it's not, add it
-                        latestAllowances[tokenAddress] = [];
+                    if(latestAllowances[spenderAddress] === undefined){
+                        latestAllowances[spenderAddress] = {};
                     }
-                    // now we can add the spender address, allowance, and block number to the array
-                    latestAllowances[tokenAddress].push({
-                        spender: spenderAddress,
-                        allowance: allowance.toString(),
-                        blockNumber: blockNumber
-                    });
-                });
-                // now we can return the latestAllowances object
+                    if(latestAllowances[spenderAddress][tokenAddress] === undefined){
+                        latestAllowances[spenderAddress][tokenAddress] = {};
+                    }
+                    if(latestAllowances[spenderAddress][tokenAddress].blockNumber === undefined || latestAllowances[spenderAddress][tokenAddress].blockNumber < blockNumber){
+                        latestAllowances[spenderAddress][tokenAddress].allowance = allowance;
+                        latestAllowances[spenderAddress][tokenAddress].blockNumber = blockNumber;
+                    }
+                }
+                );
                 res.status(200).send({
                     status: 200,
                     details: {
