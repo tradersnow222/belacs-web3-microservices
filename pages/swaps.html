@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Swaps</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+        <script>
+
+        </script>
+
+    </head>
+
+    <body>  
+        <!-- headder bar to redirect to home -->
+        <nav class="navbar-inverse">
+            <div>
+                <div class="container-fluid">
+                    <div class="navbar-header">
+                        <a class="navbar-brand" href="/">Home</a>
+                    </div>
+                </div>
+            </div>
+            <div class="network-select">
+                <div class="dropdown">
+                    <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Select Network
+                    <span class="caret"></span></button>
+                    <ul class="dropdown-menu">
+                        <li><a href="#" onclick="chainID=1">Ethereum</a></li>
+                        <li><a href="#" onclick="chainID=10">Optimism</a></li>
+                        <li><a href="#" onclick="chainID=56">BNB Chain</a></li>
+                        <li><a href="#" onclick="chainID=100">Gnosis</a></li>
+                        <li><a href="#" onclick="chainID=137">Polygon</a></li>
+                        <li><a href="#" onclick="chainID=250">Fantom</a></li>
+                        <li><a href="#" onclick="chainID=42161">Arbitrum</a></li>
+                        <li><a href="#" onclick="chainID=43114">Avalanche</a></li>
+                        <!-- klaytn and aurora aren't supported by tenderly so we'll leave them in comments -->
+                        <!-- <li><a href="#" onclick="chainID=8217">Klaytn</a></li> -->
+                        <!-- <li><a href="#" onclick="chainID=1313161554">Aurora</a></li> -->                    
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <!-- this will be a centered form to hold the swap widget -->
+        <div class="container-widget">
+            <div class="widget">
+                <!-- widget header with a left aligned SWAP text and 3 right aligned buttons, refresh, + and settings  all on the same row-->
+                <div class="widget-header">
+                    <div class="col-sm-3">
+                        <h3>SWAP</h3>
+                    </div>
+                    <div class="col-sm-9">
+                        <button type="button" class="btn btn-default btn-sm" id="refreshButton">
+                            <span class="glyphicon glyphicon-refresh"></span> <!-- Refresh-->
+                        </button>
+                        <button type="button" class="btn btn-default btn-sm" id="addButton">
+                            <span class="glyphicon glyphicon-plus"></span> <!-- Add -->
+                        </button>
+                        <button type="button" class="btn btn-default btn-sm" id="settingsButton">
+                            <span class="glyphicon glyphicon-cog"></span> <!-- Settings -->
+                        </button>
+                    </div>
+                </div>
+                <!-- the "you sell" field of the widget. A master div has 3 left aligned elements and 3 right aligned elements -->
+                <div class="widget-sell">
+                    <!-- first row, the left align is the "you sell" hyperlink the rigth align is "Balance" -->
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <a href="#">You Sell</a>
+                        </div>
+                        <div class="col-sm-9">
+                            <a href="#">Balance</a>
+                        </div>
+                    </div>
+                    <!-- The second row, the left is a drop down for token selection (filled by javascript) and the rigth is an editable div for input amounts -->
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <div class="dropdown">
+                                <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Select Token
+                                <span class="caret"></span></button>
+                                <ul class="dropdown-menu" id="token-list-selector-sell">
+                                    <!-- javascript will fill this -->
+                                </ul>
+                            </div>
+                        </div>
+                        <!-- this input will just be a transparent editable div that's right aligned -->
+                        <div class="col-sm-9">
+                            <div class="input-group">
+                                <div contenteditable="true" class="" id="sellAmount">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- the third row will be token full name and price, but we won't have this for now-->
+                </div>
+
+                <!-- button with arrows side by side pointing up and down to allow the user to flip the buy and sell token -->
+                <div class="widget-button">
+                    <button type="button" class="btn btn-default btn-sm" id="flipButton">
+                        <span class="glyphicon glyphicon-arrow-up"></span>
+                        <span class="glyphicon glyphicon-arrow-down"></span>
+                    </button>
+                </div>
+
+                <!-- same thing as widget sell but instead it's you buy -->
+                <div class="widget-buy">
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <a href="#">You Buy</a>
+                        </div>
+                        <div class="col-sm-9">
+                            <a href="#">Balance</a>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <div class="dropdown">
+                                <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Select Token
+                                <span class="caret"></span></button>
+                                <ul class="dropdown-menu" id="token-list-selector-buy">
+                                    <!-- javascript will fill this -->
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-sm-9">
+                            <div class="input-group">
+                                <div contenteditable="true" class="" id="buyAmount">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+
+    <style>
+        .navbar-inverse {
+            display: flex;
+            flex-direction: row;
+        }
+        /* add padding to the network-select to fit within */
+        .network-select {
+            padding: 7px;
+        }
+        .container-widget{
+            display: flex;
+            justify-content: center;
+        }
+        .widget{
+            width:100%;
+            max-width: 500px;
+            border: 1px solid black;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 20px;
+            height:600px;
+        }
+        .widget-header{
+            display: flex;
+            flex-direction: row;
+            /* make sure everything is lined up */
+            align-items: center;
+        }
+        /* right align the settings */
+        .widget-header > div:nth-child(2){
+            display: flex;
+            justify-content: flex-end;
+            /* space the inside elements */
+            gap: 10px;
+        }
+        .widget-sell{
+            /* give it a grey background */
+            background-color: #e6e6e6;
+            /* give it a border */
+            border: 1px solid black;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px;
+            height: fit-content;
+        }
+        /* the first row in widget-sell, left align the first element and right align the second */
+        .widget-sell > div:nth-child(1){
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+        .widget-sell > div:nth-child(1) > div:nth-child(2){
+            display: flex;
+            justify-content: flex-end;
+        }
+        /* the second row in widget-sell, left align the first element and right align the second */
+        .widget-sell > div:nth-child(2){
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+        .widget-sell > div:nth-child(2) > div:nth-child(2){
+            display: flex;
+            justify-content: flex-end;
+        }
+        .input-group{
+            width: 100%;
+            text-align: right;
+        }
+        .widget-buy{
+            /* give it a grey background */
+            background-color: #e6e6e6;
+            /* give it a border */
+            border: 1px solid black;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px;
+            height: fit-content;
+        }
+        /* the first row in widget-buy, left align the first element and right align the second */
+        .widget-buy > div:nth-child(1){
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+        .widget-buy > div:nth-child(1) > div:nth-child(2){
+            display: flex;
+            justify-content: flex-end;
+        }
+        /* the second row in widget-buy, left align the first element and right align the second */
+        .widget-buy > div:nth-child(2){
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+        .widget-buy > div:nth-child(2) > div:nth-child(2){
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        /* center widget-button */
+        .widget-button{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+    </style>
+    <script>
+        // listen for the dropdown button to be clicked and change the text to the selected network
+        $('.dropdown-menu li a').click(function(){
+            var selText = $(this).text();
+            $(this).parents('.dropdown').find('.dropdown-toggle').html(selText+' <span class="caret"></span>');
+            // if we wanted to we could change the style of the button to match the network selected
+        });
+    </script>
+</html>

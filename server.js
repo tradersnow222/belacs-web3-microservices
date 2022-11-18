@@ -13,7 +13,9 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // save the examples html in a variable from the examples.html file
-const EXAMPLES_HTML = fs.readFileSync("examples.html", "utf8");
+const INDEX_HTML = fs.readFileSync("./index.html", "utf8");
+const ALLOWANCE_HTML = fs.readFileSync("./pages/allowance.html", "utf8");
+const SWAPS_HTML = fs.readFileSync("./pages/swaps.html", "utf8");
 
 const ETH_RPC = "https://mainnet.infura.io/v3/52aee165600a40718b05b78def0c0212";
 
@@ -62,10 +64,12 @@ const simplifiedABI = [
 *************************/
 
 app.get("/", (req, res) => {
-    res.redirect("/examples");
+    res.send(INDEX_HTML);
 });
 
-app.get("/examples", sendExamplePage);
+app.get("/allowances", sendAllowancePage);
+
+app.get("/swaps", sendSwapsPage);
 
 // expects the parameters "userAddress" and "tokenAddress"
 app.get("/v1.0/:chainID/getSingleAllowance", getSingleAllowance);
@@ -139,6 +143,14 @@ function getSingleAllowance(req, res) {
 
 function sendExamplePage(req, res) {
     res.send(EXAMPLES_HTML);
+}
+
+function sendAllowancePage(req, res) {
+    res.send(ALLOWANCE_HTML);
+}
+
+function sendSwapsPage(req, res) {
+    res.send(SWAPS_HTML);
 }
 
 function getAllAllowances(req, res) {

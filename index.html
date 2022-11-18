@@ -1,0 +1,93 @@
+<!--  -->
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Home</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    </head>
+
+    <body>
+        <!-- we'll have cards with a Header, description of the page, and a button hyperlink. Each card will have 4 card-text fields even if all aren't used  -->
+
+        <!-- card for "allowance.html" -->
+        <div class="container">
+            <div class="card">
+                <div class="card-header">
+                    Allowance
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Allowance is the amount of tokens that an owner has approved to be spent by a spender.</p>
+                    <p class="card-text">View and manage token allowances on this page</p>
+                    <p class="card-text"></p>
+                    <p class="card-text"></p>
+                    <a href="/allowances" class="btn btn-primary">Go to Allowance</a>
+                    
+                </div>
+            </div>
+
+            <!-- card for swaps.html -->
+            <div class="card">
+                <div class="card-header">
+                    Swaps
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Swaps are the exchange of tokens between two parties.</p>
+                    <p class="card-text">View and manage token swaps on this page</p>
+                    <p class="card-text"></p>
+                    <p class="card-text"></p>
+                    <a href="/swaps" class="btn btn-primary">Go to Swaps</a>
+                </div>
+            </div>
+            <!-- others -->
+
+        </div>
+
+    </body>
+
+    <style>
+        .card {
+            /* cards will either fit the screen width (for mobile) or be 200px wide */
+            width: 100%;
+            max-width: 400px;
+            margin: 10px;
+            /* make a constant height of 300 px */
+            height: 300px;
+            /* border and shadowing  */
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,.15);
+            /* internal padding */
+            padding: 10px;
+        }
+        .card-header
+        {
+            /* center and bold */
+            text-align: center;
+            font-weight: bold;
+            /* make a slightly larger font */
+            font-size: 2em;
+        }
+        .card-body{
+            /* align to bottom */
+            height:100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding-bottom: 50px;
+        }
+        .container {
+            /* this will wrap horizontally and expand vertically to handle unlimited cards */
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            /* center the cards */
+            justify-content: center;
+        }
+    </style>
+
+</html>
