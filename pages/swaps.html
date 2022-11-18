@@ -131,6 +131,19 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- lastly we'll have a "connect wallet" button that will bring up a popup asking for a wallet. Once there's a valid wallet, it will change to the "swap" button -->
+                <div class="widget-connect">
+                    <button type="button" class="btn btn-primary" id="connectButton">Connect Wallet</button>
+                </div>
+                <!-- disconnect wallet button, not visible by default -->
+                <div class="widget-disconnect">
+                    <button type="button" class="btn btn-primary" id="disconnectButton">Disconnect Wallet</button>
+                </div>
+                <!-- finally, a place to display the connected address in small 6pt font -->
+                <div class="widget-address">
+                    <p id="address"></p>
+                </div>  
             </div>
         </div>
     </body>
@@ -155,7 +168,7 @@
             border-radius: 5px;
             padding: 10px;
             margin: 20px;
-            height:600px;
+            height:400px; /* maybe can be tinier? */
         }
         .widget-header{
             display: flex;
@@ -241,6 +254,37 @@
             justify-content: center;
             align-items: center;
         }
+        /* center widget-connect */
+        .widget-connect{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .widget-connect > button{
+            width: 97%;
+        }
+
+        .widget-disconnect {
+            /* hide the button */
+            visibility: hidden;
+            /* add a little padding so it doesn't run up against the connect button */
+            padding: 5px;
+            /* right align the content */
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .widget-address{
+            /* add a little padding so it doesn't run up against the connect button */
+            padding: 5px;
+            /* center */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* shrink the font and color it grey */
+            font-size: 6pt;
+            color: grey;
+        }
 
     </style>
     <script>
@@ -250,5 +294,36 @@
             $(this).parents('.dropdown').find('.dropdown-toggle').html(selText+' <span class="caret"></span>');
             // if we wanted to we could change the style of the button to match the network selected
         });
+
+        // this is the javascript code to handle the "widget-connect" button and replace it with a "swap" button once a wallet is connected
+        $('.widget-connect').click(function(){
+            // alert askign for a wallet address
+            var walletAddress = prompt("Please enter your wallet address", "0x");
+            // if the wallet address is valid, replace the "connect wallet" button with a "swap" button
+            if (walletAddress != null) {
+                // remove leading and trailing whitespace
+                walletAddress = walletAddress.trim();
+                // check if the wallet address is valid
+                if (walletAddress.startsWith("0x") && walletAddress.length == 42) {
+                    // replace the "connect wallet" button with a "swap" button
+                    $('.widget-connect').html('<button type="button" class="btn btn-primary" id="swapButton">Swap</button>');
+                    // show the "disconnect wallet" button
+                    $('.widget-disconnect').css('visibility', 'visible');
+                    // display the wallet address
+                    $('#address').html(walletAddress);
+                }
+            }
+        })
+
+        // this is the javascript code to handle the "widget-disconnect" button and replace the swap button with a "connect wallet" button once a wallet is disconnected
+        $('.widget-disconnect').click(function(){
+            // replace the "swap" button with a "connect wallet" button
+            $('.widget-connect').html('<button type="button" class="btn btn-primary" id="connectButton">Connect Wallet</button>');
+            // hide the "disconnect wallet" button
+            $('.widget-disconnect').css('visibility', 'hidden');
+            // clear the wallet address
+            $('#address').html("");
+        })
+
     </script>
 </html>
