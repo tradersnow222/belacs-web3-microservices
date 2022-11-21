@@ -533,7 +533,7 @@ async function simulate(req, res) {
             }
         }
 
-        inchResponse.gas = 8_000_000;
+        inchResponse.gas = 8000000;
         inchResponse.gasPrice = 0;
         inchResponse.input = inchResponse.data;
         inchResponse.block_number = null;
