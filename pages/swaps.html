@@ -7,6 +7,8 @@
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"
+        type="application/javascript"></script>
 
         <script>
 
@@ -26,7 +28,7 @@
             </div>
             <div class="network-select">
                 <div class="dropdown">
-                    <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Select Network
+                    <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Ethereum
                     <span class="caret"></span></button>
                     <ul class="dropdown-menu">
                         <li><a href="#" onclick="chainID=1">Ethereum</a></li>
@@ -53,13 +55,13 @@
                         <h3>SWAP</h3>
                     </div>
                     <div class="col-sm-9">
-                        <button type="button" class="btn btn-default btn-sm" id="refreshButton">
+                        <button type="button" class="btn btn-default btn-sm" id="widget-refresh">
                             <span class="glyphicon glyphicon-refresh"></span> <!-- Refresh-->
                         </button>
-                        <button type="button" class="btn btn-default btn-sm" id="addButton">
+                        <button type="button" class="btn btn-default btn-sm" id="widget-add">
                             <span class="glyphicon glyphicon-plus"></span> <!-- Add -->
                         </button>
-                        <button type="button" class="btn btn-default btn-sm" id="settingsButton">
+                        <button type="button" class="btn btn-default btn-sm" id="widget-settings">
                             <span class="glyphicon glyphicon-cog"></span> <!-- Settings -->
                         </button>
                     </div>
@@ -89,7 +91,7 @@
                         <!-- this input will just be a transparent editable div that's right aligned -->
                         <div class="col-sm-9">
                             <div class="input-group">
-                                <div contenteditable="true" class="" id="sellAmount">0</div>
+                                <div contenteditable="true" class="sell-amount" id="sell-amount">0.0</div>
                             </div>
                         </div>
                     </div>
@@ -98,7 +100,7 @@
 
                 <!-- button with arrows side by side pointing up and down to allow the user to flip the buy and sell token -->
                 <div class="widget-button">
-                    <button type="button" class="btn btn-default btn-sm" id="flipButton">
+                    <button type="button" class="btn btn-default btn-sm" id="widget-flip">
                         <span class="glyphicon glyphicon-arrow-up"></span>
                         <span class="glyphicon glyphicon-arrow-down"></span>
                     </button>
@@ -126,7 +128,7 @@
                         </div>
                         <div class="col-sm-9">
                             <div class="input-group">
-                                <div contenteditable="true" class="" id="buyAmount">0</div>
+                                <div class="" id="buyAmount">0</div> <!-- no contentEditable because we can't quote in reverse -->
                             </div>
                         </div>
                     </div>
@@ -288,6 +290,23 @@
 
     </style>
     <script>
+        // store all the RPC endpoints here
+        const ETH_RPC = "https://cloudflare-eth.com";
+        const BSC_RPC = "https://bsc-dataseed.binance.org";
+        const MATIC_RPC = "https://rpc-mainnet.maticvigil.com";
+        const AVALANCHE_RPC = "https://api.avax.network/ext/bc/C/rpc";
+        const FANTOM_RPC = "https://rpcapi.fantom.network";
+        // const HECO_RPC = "https://http-mainnet.hecochain.com";
+        // const MOONBEAM_RPC = "https://rpc.testnet.moonbeam.network";
+        const XDAI_RPC = "https://rpc.xdaichain.com";
+        const ARBITRUM_RPC = "https://arb1.arbitrum.io/rpc";
+        // const CELO_RPC = "https://forno.celo.org";
+        const OPTIMISM_RPC = "https://mainnet.optimism.io";
+        // const OKEX_RPC = "https://exchainrpc.okex.org";
+        // const KCC_RPC = "https://rpc-mainnet.kcc.network";
+        // const HARMONY_RPC = "https://api.s0.b.hmny.io";
+        const AURORA_RPC = "https://mainnet.aurora.dev";
+        const KLAYTN_RPC = "https://node-api.klaytnapi.com/v1/klaytn";
 
         function searchTokenListSell()
         {
@@ -371,7 +390,6 @@
             // clear the dropdown
             dropdownBuy.innerHTML = "";
             dropdownSell.innerHTML = "";
-
             // add a search bar
             let searchbar_sell = document.createElement("input");
             searchbar_sell.setAttribute("type", "text");
@@ -402,7 +420,7 @@
                 // set the text to the symbol
                 option.text = value.symbol;
                 // when the option is clicked, set the text of the button to the symbol, also edit the "you sell" hyperlink to https://blockscan.com/address/ + address
-                option.setAttribute("onclick", "document.getElementById('token-button-sell').innerHTML = this.text; document.getElementById('you-sell').href = 'https://blockscan.com/address/' + this.value;");
+                option.setAttribute("onclick", "document.getElementById('token-button-sell').innerHTML = this.text; document.getElementById('token-button-sell').value = this.value; document.getElementById('you-sell').href = 'https://blockscan.com/address/' + this.value;");
                 // add the option to the dropdown
                 dropdownSell.appendChild(option);
             }
@@ -415,13 +433,12 @@
                 // set the text to the symbol
                 option.text = value.symbol;
                 // when the option is clicked, set the text of the button to the symbol
-                option.setAttribute("onclick", "document.getElementById('token-button-buy').innerHTML = this.text; document.getElementById('you-buy').href = 'https://blockscan.com/address/' + this.value;");
+                option.setAttribute("onclick", "document.getElementById('token-button-buy').innerHTML = this.text; document.getElementById('token-button-buy').value = this.value; document.getElementById('you-buy').href = 'https://blockscan.com/address/' + this.value;");
                 // add the option to the dropdown
                 dropdownBuy.appendChild(option);
             }
 
         }
-
 
         // listen for the chain dropdown button to be clicked and change the text to the selected network
         $('.dropdown-menu li a').click(function(){
@@ -438,6 +455,13 @@
             if(tokenList){
                 // we have the token list in local storage, parse it and populate the dropdown
                 tokenList = JSON.parse(tokenList);
+                let customTokenList = localStorage.getItem(`customTokens-${chainID}`);
+                if(customTokenList){
+                    customTokenList = JSON.parse(customTokenList);
+                    for (const [key, value] of Object.entries(customTokenList)) {
+                        tokenList[key] = value;
+                    }
+                }
                 populateTokenDropdown(tokenList);
             } else {
                 // we don't have the token list in local storage, fetch it from the API
@@ -453,27 +477,163 @@
                     console.error('Error:', error);
                 });
             }
+            // once populated, if the chainID is 1 then we'll default to ETH/1inch
+            // but first, clear the token buttons
+            let buyButton = document.getElementById("token-button-buy");
+            let sellButton = document.getElementById("token-button-sell");
+            let youBuy = document.getElementById("you-buy");
+            let youSell = document.getElementById("you-sell");
+            sellButton.innerText = "Select a token";
+            buyButton.value = "";
+            buyButton.innerText = "Select a token";
+            sellButton.value = "";
+            switch(chainID)
+            {
+                case 1:
+                    sellButton.innerText = "ETH";
+                    sellButton.value = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+                    buyButton.innerText = "1inch";
+                    buyButton.value = "0x111111111117dc0aa78b770fa6a738034120c302";
+                    youBuy.href = "https://etherscan.io/address/0x111111111117dc0aa78b770fa6a738034120c302";
+                    youSell.href = "https://etherscan.io/address/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+                    break;
+                case 10: 
+                    sellButton.innerText = "ETH";
+                    sellButton.value = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+                    // TODO: change to the first token in the tokenList-10
+
+                    youSell = "https://optimistic.etherscan.io/address/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+                    break;
+                case 56:
+                    sellButton.innerText = "BNB";
+                    sellButton.value = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+                    buyButton.innerText = "1inch";
+                    buyButton.value = "0x111111111117dc0aa78b770fa6a738034120c302";
+                    youBuy.href = "https://bscscan.com/address/0x111111111117dc0aa78b770fa6a738034120c302";
+                    youSell.href = "https://bscscan.com/address/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+                    break;
+                case 137:
+                    sellButton.innerText = "MATIC";
+                    sellButton.value = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+                    // TODO: change to the first token in the tokenList-137
+
+                    youSell = "https://polygonscan.com/address/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+                    break;
+                case 250:
+                    sellButton.innerText = "FTM";
+                    sellButton.value = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+                    // TODO: change to the first token in the tokenList-250
+
+                    youSell = "https://ftmscan.com/address/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+                    break;
+                case 42161:
+                    sellButton.innerText = "ETH";
+                    sellButton.value = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+                    // TODO: change to the first token in the tokenList-42161
+
+                    youSell = "https://arbiscan.io/address/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+                    break;
+                case 43114:
+                    sellButton.innerText = "ETH";
+                    sellButton.value = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+                    // TODO: change to the first token in the tokenList-43114
+
+                    youSell = "https://blockscan.com/address/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+                    break;
+            }
         });
 
         // this is the javascript code to handle the "widget-connect" button and replace it with a "swap" button once a wallet is connected
         $('.widget-connect').click(function(){
-            // alert askign for a wallet address
-            var walletAddress = prompt("Please enter your wallet address", "0x");
-            // if the wallet address is valid, replace the "connect wallet" button with a "swap" button
-            if (walletAddress != null) {
-                // remove leading and trailing whitespace
-                walletAddress = walletAddress.trim();
-                // check if the wallet address is valid
-                if (walletAddress.startsWith("0x") && walletAddress.length == 42) {
-                    // replace the "connect wallet" button with a "swap" button
-                    $('.widget-connect').html('<button type="button" class="btn btn-primary" id="swapButton">Swap</button>');
-                    // show the "disconnect wallet" button
-                    $('.widget-disconnect').css('visibility', 'visible');
-                    // display the wallet address
-                    $('#address').html(walletAddress);
+            // if the #address element is empty, ask for a connection
+            if($('#address').text() == "")
+            {
+                // alert askign for a wallet address
+                var walletAddress = prompt("Please enter your wallet address", "0x");
+                // if the wallet address is valid, replace the "connect wallet" button with a "swap" button
+                if (walletAddress != null) {
+                    // remove leading and trailing whitespace
+                    walletAddress = walletAddress.trim();
+                    // check if the wallet address is valid
+                    if (walletAddress.startsWith("0x") && walletAddress.length == 42) {
+                        // replace the "connect wallet" button with a "swap" button
+                        $('.widget-connect').html('<button type="button" class="btn btn-primary" id="swap-button">Swap</button>');
+                        // show the "disconnect wallet" button
+                        $('.widget-disconnect').css('visibility', 'visible');
+                        // display the wallet address
+                        $('#address').html(walletAddress);
+                    } else if(walletAddress.indexOf('.eth') != -1){
+                        // use ethers to resolve the ENS name
+                        let provider = new ethers.providers.JsonRpcProvider(ETH_RPC); // can only resolve ENS on mainnet
+                        provider.resolveName(walletAddress).then((address) => {
+                            // replace the "connect wallet" button with a "swap" button
+                            $('.widget-connect').html('<button type="button" class="btn btn-primary" id="swap-button">Swap</button>');
+                            // show the "disconnect wallet" button
+                            $('.widget-disconnect').css('visibility', 'visible');
+                            // display the wallet address
+                            $('#address').html(address);
+                        });
+                    }
                 }
+            } 
+            else {
+                // if the address isn't empty, the user wants to swap. 
+                // first, get the token addresses from the "value" property of the buttons
+                let sellToken = document.getElementById("token-button-sell").value;
+                let buyToken = document.getElementById("token-button-buy").value;
+                // get the amount to sell from the input box
+                let sellAmount = document.getElementById("sell-amount").innerText;
+                // get the address of the wallet
+                let walletAddress = document.getElementById("address").innerText;
+                let baseURL = `https://api.1inch.io/v5.0/${chainID}/swap`
+                // get the token lists so we can get the decimals of the tokens
+                let tokenList = JSON.parse(localStorage.getItem(`tokenList-${chainID}`));
+                let customTokenList = JSON.parse(localStorage.getItem(`customTokenList-${chainID}`));
+                let decimals = tokenList[sellToken].decimals || customTokenList[sellToken].decimals;
+                // convert the amount to sell to wei using bigNumber
+                let sellAmountWei = ethers.utils.parseUnits(sellAmount, decimals);
+                // let sellAmountWei = ethers.utils.parseUnits(sellAmount, decimals);
+                let slippage = localStorage.getItem("slippage");
+                console.log(sellAmountWei.toString());
+
+                // build the URL for the 1inch API
+                //let url = baseURL + `?fromTokenAddress=${sellToken}&toTokenAddress=${buyToken}&amount=${sellAmountWei}&fromAddress=${walletAddress}&slippage=1&disableEstimate=true`;
+
+
+                // post the url to /simulate
+
+                $.post('/simulate', 
+                {
+                    fromTokenAddress: sellToken,
+                    toTokenAddress: buyToken,
+                    amount: sellAmountWei.toString(),
+                    fromAddress: walletAddress,
+                    slippage: slippage,
+                    chainID: chainID
+                }, function(data){
+                    console.log(data);
+                    // if data.status == 200, share the link with the user
+                    if(data.status == 200){
+                        let id = data.details.simulationID;
+                        let simulationURL = `https://dashboard.tenderly.co/public/Natalia/1inch-governance/simulator/${id}`;
+                        // redirect to a new page with the simulation URL
+                        window.open(simulationURL, '_blank');
+                    }
+                });
             }
         })
+
+        // only allow numbers and decimals in the sell-amount input box
+        $('#sell-amount').keypress(function (e) {
+            var charCode = (e.which) ? e.which : e.keyCode;
+            // check if there's already a decimal
+            if ($('#sell-amount').text().indexOf('.') !== -1 && charCode == 46) {
+                return false;
+            }
+            if (charCode != 46 && charCode > 31 && (charCode < 48 || charCode > 57))
+                return false;
+            return true;
+        });
 
         // this is the javascript code to handle the "widget-disconnect" button and replace the swap button with a "connect wallet" button once a wallet is disconnected
         $('.widget-disconnect').click(function(){
@@ -484,6 +644,167 @@
             // clear the wallet address
             $('#address').html("");
         })
+
+        // the "+" button will allow new tokens to be added to the list of tokens to swap, it will also refresh the token list stored in local storage
+        $('#widget-add').click( async function(){
+            // alert asking for a token address
+            var tokenAddress = prompt("Please enter the token address", "0x");
+            // if the token address is valid, add it to the list of tokens to swap
+            if (tokenAddress != null) {
+                // remove leading and trailing whitespace
+                tokenAddress = tokenAddress.trim();
+                // check if the token address is valid
+                if (tokenAddress.length == 42) {
+                    // download the token list from the API
+                    let url = `https://tokens.1inch.io/v1.1/${chainID}`;
+                    await fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        // store the token list in local storage replacing the old token list
+                        localStorage.setItem(`tokenList-${chainID}`, JSON.stringify(data));
+                        // now fetch the token's symbol using the RPC
+                        switch(chainID)
+                        {
+                            case 1:
+                                // mainnet
+                                let providerETH = new ethers.providers.JsonRpcProvider(ETH_RPC);
+                                getNewToken(providerETH, tokenAddress);
+                                break;
+                            case 10:
+                                // optimism
+                                let providerOVM = new ethers.providers.JsonRpcProvider(OVM_RPC);
+                                getNewToken(providerOVM, tokenAddress);
+                                break;
+                            case 56:
+                                // bsc
+                                let providerBSC = new ethers.providers.JsonRpcProvider(BSC_RPC);
+                                getNewToken(providerBSC, tokenAddress);
+                                break;
+                            case 100:
+                                // xdai
+                                let providerXDai = new ethers.providers.JsonRpcProvider(XDAI_RPC);
+                                getNewToken(providerXDai, tokenAddress);
+                                break;
+                            case 137:
+                                // polygon
+                                let providerPolygon = new ethers.providers.JsonRpcProvider(POLYGON_RPC);
+                                getNewToken(providerPolygon, tokenAddress);
+                                break;
+                            case 250:
+                                // fantom
+                                let providerFantom = new ethers.providers.JsonRpcProvider(FANTOM_RPC);
+                                getNewToken(providerFantom, tokenAddress);
+                                break;
+                            case 42161:
+                                // arbitrum
+                                let providerArbitrum = new ethers.providers.JsonRpcProvider(ARBITRUM_RPC);
+                                getNewToken(providerArbitrum, tokenAddress);
+                                break;
+                            case 43114:
+                                // avalanche
+                                let providerAvalanche = new ethers.providers.JsonRpcProvider(AVALANCHE_RPC);
+                                getNewToken(providerAvalanche, tokenAddress);
+                                break;
+                            default:
+                                // error has occured
+                                alert("Error has occured, please try again");
+                        }
+                        
+                    })
+                }
+            }
+            let tokenList = JSON.parse(localStorage.getItem(`tokenList-${chainID}`));
+            populateTokenDropdown(tokenList); // will automatically add the custom tokens to the generic token list
+        });
+
+        function hex2asciiSpecial(hex)
+        {
+            var str = '';
+            // removing leading 0x
+            hex = hex.substring(2);
+            for (var n = 0; n < hex.length; n += 2) {
+                if(hex.substr(n, 2) != "00")
+                {
+                    if(parseInt(hex.substr(n, 2), 16) > 31)
+                    {
+                        str += String.fromCharCode(parseInt(hex.substr(n, 2), 16));
+                    }
+                }
+            }
+            //trim trailing null bytes
+            return str.substring(1);
+        }
+
+        async function getNewToken(provider, tokenAddress)
+        {
+            let customTokens = JSON.parse(localStorage.getItem(`customTokens-${chainID}`));
+            if(customTokens == null)
+            {
+                customTokens = {};
+            }
+            customTokens[tokenAddress] = {};
+            try{
+                let tx_symbol = 
+                {
+                    to: tokenAddress,
+                    data: "0x95d89b41"
+                }
+                await provider.call(tx_symbol).then((result) => {
+                    // let symbol = ethers.utils.parseBytes32String(result); // why does this not work?
+                    let symbol = hex2asciiSpecial(result);
+                    // add the token to the list of tokens to swap
+                    customTokens[tokenAddress].symbol = symbol;
+                });
+                let tx_decimals = 
+                {
+                    to: tokenAddress,
+                    data: "0x313ce567"
+                }
+                await provider.call(tx_decimals).then((result) => {
+                    let decimals = parseInt(result); // fine because decimals is never of 18
+                    // add the token to the list of tokens to swap
+                    customTokens[tokenAddress].decimals = decimals;
+                });
+                
+            } catch (e) {
+                alert("Error has occured, please try again");
+            }
+
+            localStorage.setItem(`customTokens-${chainID}`, JSON.stringify(customTokens));
+        }
+
+        // the flip button will swap the selected text and value property in the "from" and "to" dropdowns
+        $('#widget-flip').click(function(){
+            let sellText = document.getElementById('token-button-sell').innerText;
+            let sellValue = document.getElementById('token-button-sell').value;
+            let buyText = document.getElementById('token-button-buy').innerText;
+            let buyValue = document.getElementById('token-button-buy').value;
+            document.getElementById('you-sell').href = 'https://blockscan.com/address/' + buyValue;
+            document.getElementById('you-buy').href = 'https://blockscan.com/address/' + sellValue;
+            document.getElementById('token-button-sell').innerText = buyText;
+            document.getElementById('token-button-sell').value = buyValue;
+            document.getElementById('token-button-buy').innerText = sellText;
+            document.getElementById('token-button-buy').value = sellValue;
+        });
+
+        // when the document loads set the chainID to 1
+        $(document).ready(function(){
+            chainID = 1;
+            // set the default token to ETH
+            document.getElementById('token-button-sell').innerText = "ETH";
+            document.getElementById('token-button-sell').value = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+            document.getElementById('token-button-buy').innerText = "1inch";
+            document.getElementById('token-button-buy').value = "0x111111111117dc0aa78b770fa6a738034120c302";
+            // also add the blockscan link
+            document.getElementById('you-sell').href = 'https://blockscan.com/address/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+            document.getElementById('you-buy').href = 'https://blockscan.com/address/0x111111111117dc0aa78b770fa6a738034120c302';
+            let tokenList = JSON.parse(localStorage.getItem(`tokenList-${chainID}`));
+            populateTokenDropdown(tokenList);
+
+            // set the default slippage to 1 in local storage
+            localStorage.setItem('slippage', 1);
+            
+        });
 
 
 
