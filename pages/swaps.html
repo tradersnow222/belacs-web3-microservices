@@ -147,7 +147,7 @@
                     <p id="address"></p>
                 </div>  
                 <!-- errors -->
-                <div class="widget-error">
+                <div class="widget-error" id="widget-error">
                 </div>
             </div>
         </div>
@@ -291,6 +291,16 @@
             color: grey;
         }
 
+        .widget-error{
+            /* add a little padding so it doesn't run up against the connect button */
+            padding: 5px;
+            /* center */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12pt;
+        }
+
     </style>
     <script>
         // store all the RPC endpoints here
@@ -329,7 +339,7 @@
             input = document.getElementById('token-search-sell');
             filter = input.value.toUpperCase();
             ul = document.getElementById("token-list-selector-sell");
-            li = ul.getElementsByTagName('option');
+            li = ul.getElementsByTagName('button');
 
             // Loop through all list items, and hide those who don't match the search query
             for (i = 0; i < li.length; i++) {
@@ -346,7 +356,7 @@
                     }
                 } else {
                     // if it's not an address, check if the li[i].text matches
-                    txtValue = li[i].text.toUpperCase();
+                    txtValue = li[i].innerText.toUpperCase();
                     if (txtValue.toUpperCase().indexOf(filter) > -1) {
                         li[i].style.display = "";
                         li[i].style.visibility = "visible";
@@ -365,7 +375,7 @@
             input = document.getElementById('token-search-buy');
             filter = input.value.toUpperCase();
             ul = document.getElementById("token-list-selector-buy");
-            li = ul.getElementsByTagName('option');
+            li = ul.getElementsByTagName('button');
             // Loop through all list items, and hide those who don't match the search query
             for (i = 0; i < li.length; i++) {
                 // check if the search term is the token symbol or an address
@@ -396,6 +406,7 @@
 
         function populateTokenDropdown(tokenlist)
         {
+
             // expected tokenlist will look like
             // {"0x0327112423f3a68efdf1fcf402f6c5cb9f7c33fd":{"symbol":"BTC++","name":"PieDAO BTC++","decimals":18,"address":"0x0327112423f3a68efdf1fcf402f6c5cb9f7c33fd","logoURI":"https://tokens.1inch.io/0x0327112423f3a68efdf1fcf402f6c5cb9f7c33fd.png","tags":["tokens","PEG:BTC"]},"0x04fa0d235c4abf4bcf4787af4cf447de572ef828":{"symbol":"UMA","name":"UMA Voting Token v1","decimals":18,"address":"0x04fa0d235c4abf4bcf4787af4cf447de572ef828","logoURI":"https://tokens.1inch.io/0x04fa0d235c4abf4bcf4787af4cf447de572ef828.png","tags":["tokens"]}}
             // we want to populate the dropdown with the symbol and address along with a search bar at the top of the token list
@@ -418,53 +429,49 @@
             searchbar_buy.setAttribute("placeholder", "Search for tokens...");
             dropdownBuy.appendChild(searchbar_buy);
 
-            // add a divider
-            let divider_sell = document.createElement("hr");
-            dropdownSell.appendChild(divider_sell);
-            let divider_buy = document.createElement("hr");
-            dropdownBuy.appendChild(divider_buy);
 
 
             // add the tokens for the sell dropdown
+            let sellOptionString = "";
             for (const [key, value] of Object.entries(tokenlist)) {
                 // create a new option element
-                let option = document.createElement("option");
+                let option = document.createElement("button");
                 // set the value to the address
                 option.setAttribute("value", key);
                 // set the text to the symbol
-                option.text = value.symbol;
+                option.innerText = value.symbol;
                 // when the option is clicked, set the text of the button to the symbol, also edit the "you sell" hyperlink to https://blockscan.com/address/ + address
-                option.setAttribute("onclick", "document.getElementById('token-button-sell').innerHTML = this.text; document.getElementById('token-button-sell').value = this.value; document.getElementById('you-sell').href = 'https://blockscan.com/address/' + this.value;");
+                option.setAttribute("onclick", "document.getElementById('token-button-sell').innerHTML = this.innerText; document.getElementById('token-button-sell').value = this.value; document.getElementById('you-sell').href = 'https://blockscan.com/address/' + this.value;");
+                // set the style width to 100%
+                option.setAttribute("style", "width: 100%;");
                 // add the option to the dropdown
-                dropdownSell.appendChild(option);
+                sellOptionString += option.outerHTML;
             }
+            dropdownSell.innerHTML += sellOptionString;
+
+            let stringOfOptionsBuy = "";
             // add the tokens for the buy dropdown
             for (const [key, value] of Object.entries(tokenlist)) {
                 // create a new option element
-                let option = document.createElement("option");
+                let option = document.createElement("button");
                 // set the value to the address
                 option.setAttribute("value", key);
                 // set the text to the symbol
-                option.text = value.symbol;
+                option.innerText = value.symbol;
                 // when the option is clicked, set the text of the button to the symbol
-                option.setAttribute("onclick", "document.getElementById('token-button-buy').innerHTML = this.text; document.getElementById('token-button-buy').value = this.value; document.getElementById('you-buy').href = 'https://blockscan.com/address/' + this.value;");
+                option.setAttribute("onclick", "document.getElementById('token-button-buy').innerHTML = this.innerText; document.getElementById('token-button-buy').value = this.value; document.getElementById('you-buy').href = 'https://blockscan.com/address/' + this.value;");
+                // set the style width to 100%
+                option.setAttribute("style", "width: 100%;");
                 // add the option to the dropdown
-                dropdownBuy.appendChild(option);
+                stringOfOptionsBuy += option.outerHTML;
             }
+            dropdownBuy.innerHTML += stringOfOptionsBuy;
 
         }
 
-        // listen for the chain dropdown button to be clicked and change the text to the selected network
-        $('.dropdown-menu li a').click(function(){
-            var selText = $(this).text();
-            $(this).parents('.dropdown').find('.dropdown-toggle').html(selText+' <span class="caret"></span>');
-            // if we wanted to we could change the style of the button to match the network selected
-            // TODO: change the style of the button to match the network selected
-
-            // this will handle the token dropdown, we'll pull the token lists from https://tokens.1inch.io/v1.1/${chainID}
-            // and populate the dropdown with the token names and symbols along with a "search" function. we'll call the API when the network is changed if local storage is empty
+        function getTokenList()
+        {
             let url = `https://tokens.1inch.io/v1.1/${chainID}`;
-            // first check if we have the token list in local storage
             let tokenList = localStorage.getItem(`tokenList-${chainID}`);
             if(tokenList){
                 // we have the token list in local storage, parse it and populate the dropdown
@@ -476,7 +483,7 @@
                         tokenList[key] = value;
                     }
                 }
-                populateTokenDropdown(tokenList);
+                // populateTokenDropdown(tokenList);
             } else {
                 // we don't have the token list in local storage, fetch it from the API
                 fetch(url)
@@ -484,6 +491,7 @@
                 .then(data => {
                     // store the token list in local storage
                     localStorage.setItem(`tokenList-${chainID}`, JSON.stringify(data));
+                    tokenList = data;
                     // populate the dropdown
                     populateTokenDropdown(data);
                 })
@@ -491,6 +499,18 @@
                     errorHandler(REMOTE_ERROR);
                 });
             }
+            return tokenList;
+        }
+
+        // listen for the chain dropdown button to be clicked and change the text to the selected network
+        $('.dropdown-menu li a').click(function(){
+            var selText = $(this).text();
+            $(this).parents('.dropdown').find('.dropdown-toggle').html(selText+' <span class="caret"></span>');
+            // if we wanted to we could change the style of the button to match the network selected
+            // TODO: change the style of the button to match the network selected
+
+            populateTokenDropdown(getTokenList());
+
             // once populated, if the chainID is 1 then we'll default to ETH/1inch
             // but first, clear the token buttons
             let buyButton = document.getElementById("token-button-buy");
@@ -607,45 +627,60 @@
                 // convert the amount to sell to wei using bigNumber
                 let sellAmountWei = ethers.utils.parseUnits(sellAmount, decimals);
                 // let sellAmountWei = ethers.utils.parseUnits(sellAmount, decimals);
-                let slippage = localStorage.getItem("slippage");
-                console.log(sellAmountWei.toString());
+                let slippage;
+                try{
+                   slippage = localStorage.getItem("slippage");
+                }
+                catch{
+                    slippage = 49;
+                }
 
                 // build the URL for the 1inch API
                 //let url = baseURL + `?fromTokenAddress=${sellToken}&toTokenAddress=${buyToken}&amount=${sellAmountWei}&fromAddress=${walletAddress}&slippage=1&disableEstimate=true`;
 
 
                 // post the url to /simulate
-
-                $.post('/simulate', 
+                // if the amount isn't 0, simulate the swap
+                if(parseInt(sellAmount) != 0)
                 {
-                    fromTokenAddress: sellToken,
-                    toTokenAddress: buyToken,
-                    amount: sellAmountWei.toString(),
-                    fromAddress: walletAddress,
-                    slippage: slippage,
-                    chainID: chainID
-                }, function(data){
-                    console.log(data);
-                    // if data.status == 200, share the link with the user
-                    if(data.status == 200){
-                        let id = data.details.simulationID;
-                        let simulationURL = `https://dashboard.tenderly.co/public/Natalia/1inch-governance/simulator/${id}`;
-                        
-                        if(data.details.success == false)
-                        {
-                            errorHandler(SIMULATION_ERROR, data.details.error, '\n', simulationURL);
-                        } else 
-                        {
-                            // redirect to a new page with the simulation URL
-                            window.open(simulationURL, '_blank');
+                    $.post('/simulate', 
+                    {
+                        fromTokenAddress: sellToken,
+                        toTokenAddress: buyToken,
+                        amount: sellAmountWei.toString(),
+                        fromAddress: walletAddress,
+                        slippage: slippage,
+                        chainID: chainID
+                    }, function(data){
+                        console.log(data);
+                        // if data.status == 200, share the link with the user
+                        if(data.status == 200){
+                            let id = data.details.simulationID;
+                            let simulationURL = `https://dashboard.tenderly.co/public/Natalia/1inch-governance/simulator/${id}`;
+                            
+                            if(data.details.success == false)
+                            {
+                                errorHandler(SIMULATION_ERROR, data.details.error, '\n', simulationURL);
+                            } else 
+                            {
+                                // redirect to a new page with the simulation URL
+                                try{
+                                window.open(simulationURL, '_blank');
+                                } catch(e){
+                                    // possibly popup blocked, instead prompt the user to copy the link
+                                    alert(`Please copy the link below and paste it in your browser: ${simulationURL}`);
+                                }
+                            }
+                        } else {
+                            if(data.details.error == SIMULATION_ERROR)
+                            {
+                                errorHandler(SIMULATION_ERROR, data.details.msg);
+                            }
                         }
-                    } else {
-                        if(data.details.error == SIMULATION_ERROR)
-                        {
-                            errorHandler(SIMULATION_ERROR, data.details.msg);
-                        }
-                    }
-                });
+                    });
+                } else {
+                    errorHandler(SIMULATION_ERROR, "Please enter an amount to sell");
+                }
             }
         })
 
@@ -825,12 +860,17 @@
             // also add the blockscan link
             document.getElementById('you-sell').href = 'https://blockscan.com/address/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
             document.getElementById('you-buy').href = 'https://blockscan.com/address/0x111111111117dc0aa78b770fa6a738034120c302';
-            let tokenList = JSON.parse(localStorage.getItem(`tokenList-${chainID}`));
-            populateTokenDropdown(tokenList);
+            
+            //check if we have a token list in local storage
+            let tokenList = getTokenList();
+            populateTokenDropdown(tokenList); // also a call in getTokenList() but only if the localStorage doesn't have it
 
+            try{
             // set the default slippage to 1 in local storage
             localStorage.setItem('slippage', 1);
-            
+            } catch (e) {
+                // errorHandler(LOCAL_STORAGE_ERROR);
+            }
         });
 
 
@@ -854,7 +894,7 @@
                 // edit the .widget-error
                 document.getElementById('widget-error').innerText = "Error: Chain not supported, please switch to a supported chain";
                 // change text to a red color
-                document.getElementById('widget-error').style.color = "yellow";
+                document.getElementById('widget-error').style.color = "orange";
             } else if(error === 4004)
             {
                 // edit the .widget-error
@@ -878,7 +918,7 @@
                 // edit the .widget-error
                 document.getElementById('widget-error').innerText = "Error: Amount exceeds balance"; 
                 // change text to a red color
-                document.getElementById('widget-error').style.color = "yellow";
+                document.getElementById('widget-error').style.color = "orange";
             } else if (error === 4008)
             {
                 // edit the .widget-error
