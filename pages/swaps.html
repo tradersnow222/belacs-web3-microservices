@@ -146,6 +146,9 @@
                 <div class="widget-address">
                     <p id="address"></p>
                 </div>  
+                <!-- errors -->
+                <div class="widget-error">
+                </div>
             </div>
         </div>
     </body>
@@ -307,6 +310,17 @@
         // const HARMONY_RPC = "https://api.s0.b.hmny.io";
         const AURORA_RPC = "https://mainnet.aurora.dev";
         const KLAYTN_RPC = "https://node-api.klaytnapi.com/v1/klaytn";
+        
+        // error codes
+        const IMPORT_ERROR = 4001;
+        const ACCOUNT_ERROR = 4002;
+        const CHAIN_ERROR = 4003;
+        const RPC_ERROR = 4004;
+        const TOKEN_ERROR = 4005;
+        const SIMULATION_ERROR = 4006;
+        const AMOUNT_ERROR = 4007;
+        const RENDER_ERROR = 4008;
+        const REMOTE_ERROR = 4009;
 
         function searchTokenListSell()
         {
@@ -474,7 +488,7 @@
                     populateTokenDropdown(data);
                 })
                 .catch((error) => {
-                    console.error('Error:', error);
+                    errorHandler(REMOTE_ERROR);
                 });
             }
             // once populated, if the chainID is 1 then we'll default to ETH/1inch
@@ -616,8 +630,20 @@
                     if(data.status == 200){
                         let id = data.details.simulationID;
                         let simulationURL = `https://dashboard.tenderly.co/public/Natalia/1inch-governance/simulator/${id}`;
-                        // redirect to a new page with the simulation URL
-                        window.open(simulationURL, '_blank');
+                        
+                        if(data.details.success == false)
+                        {
+                            errorHandler(SIMULATION_ERROR, data.details.error, '\n', simulationURL);
+                        } else 
+                        {
+                            // redirect to a new page with the simulation URL
+                            window.open(simulationURL, '_blank');
+                        }
+                    } else {
+                        if(data.details.error == SIMULATION_ERROR)
+                        {
+                            errorHandler(SIMULATION_ERROR, data.details.msg);
+                        }
                     }
                 });
             }
@@ -707,7 +733,7 @@
                                 break;
                             default:
                                 // error has occured
-                                alert("Error has occured, please try again");
+                                errorHandler(CHAIN_ERROR);
                         }
                         
                     })
@@ -767,7 +793,8 @@
                 });
                 
             } catch (e) {
-                alert("Error has occured, please try again");
+                errorHandler(TOKEN_ERROR);
+                // alert("Error has occured, please try again");
             }
 
             localStorage.setItem(`customTokens-${chainID}`, JSON.stringify(customTokens));
@@ -787,7 +814,7 @@
             document.getElementById('token-button-buy').value = sellValue;
         });
 
-        // when the document loads set the chainID to 1
+        // // when the document loads set the chainID to 1
         $(document).ready(function(){
             chainID = 1;
             // set the default token to ETH
@@ -807,6 +834,64 @@
         });
 
 
+        function errorHandler(error, message)
+        {
+
+            if(error === 4001)
+            {
+                // edit the .widget-error
+                document.getElementById('widget-error').innerText = "Error: Token failed to import, please check the address and try again";
+                // change text to a red color
+                document.getElementById('widget-error').style.color = "red";
+            } else if(error === 4002)
+            {
+                // edit the .widget-error
+                document.getElementById('widget-error').innerText = "Error: No account detected, please connect your wallet";
+                // change text to a red color
+                document.getElementById('widget-error').style.color = "red";
+            } else if(error === 4003)
+            {
+                // edit the .widget-error
+                document.getElementById('widget-error').innerText = "Error: Chain not supported, please switch to a supported chain";
+                // change text to a red color
+                document.getElementById('widget-error').style.color = "yellow";
+            } else if(error === 4004)
+            {
+                // edit the .widget-error
+                document.getElementById('widget-error').innerText = "Error: RPC error, please try again";
+                // change text to a red color
+                document.getElementById('widget-error').style.color = "red";
+            } else if(error === 4005)
+            {
+                // edit the .widget-error
+                document.getElementById('widget-error').innerText = "Error: Token failed to import, please check the address and try again";
+                // change text to a red color
+                document.getElementById('widget-error').style.color = "red";
+            } else if(error === 4006)
+            {
+                // edit the .widget-error
+                document.getElementById('widget-error').innerText = "Error: " + message;
+                // change text to a red color
+                document.getElementById('widget-error').style.color = "red";
+            } else if (error === 4007)
+            {
+                // edit the .widget-error
+                document.getElementById('widget-error').innerText = "Error: Amount exceeds balance"; 
+                // change text to a red color
+                document.getElementById('widget-error').style.color = "yellow";
+            } else if (error === 4008)
+            {
+                // edit the .widget-error
+                document.getElementById('widget-error').innerText = "Error: Error rendering page, please refresh";
+                // change text to a red color
+                document.getElementById('widget-error').style.color = "red";
+            } else if (error === 4009)
+
+            // clear it after 10 seconds
+            setTimeout(function(){
+                document.getElementById('widget-error').innerText = "";
+            }, 10000);
+        }
 
     </script>
 </html>

@@ -28,6 +28,18 @@ const OPTIMISM_RPC = "https://mainnet.optimism.io";
 const AURORA_RPC = "https://mainnet.aurora.dev";
 const KLAYTN_RPC = "https://node-api.klaytnapi.com/v1/klaytn";
 
+const IMPORT_ERROR = 4001;
+const ACCOUNT_ERROR = 4002;
+const CHAIN_ERROR = 4003;
+const RPC_ERROR = 4004;
+const TOKEN_ERROR = 4005;
+const SIMULATION_ERROR = 4006;
+const AMOUNT_ERROR = 4007;
+const RENDER_ERROR = 4008;
+const REMOTE_ERROR = 4009;
+
+const MAX_ALLOWANCE = "115792089237316195423570985008687907853269984665640564039457584007913129639935";
+
 // read in the .env file as json
 require('dotenv').config();
 const {
@@ -326,7 +338,8 @@ app.post('/simulate',  bodyParser.urlencoded({ extended: false }),  simulate);
 async function simulate(req, res) {
 
     const TENDERLY_SIMULATION_API = `https://api.tenderly.co/api/v1/account/${TENDERLY_USER}/project/${TENDERLY_PROJECT}/simulate`
-    const TENDERLY_FORK_API = `http://api.tenderly.co/api/v1/account/${TENDERLY_USER}/project/${TENDERLY_PROJECT}/fork`;
+    const TENDERLY_ENCODING_API = `https://api.tenderly.co/api/v1/account/${TENDERLY_USER}/project/${TENDERLY_PROJECT}/contracts/encode-states`
+    // const TENDERLY_FORK_API = `http://api.tenderly.co/api/v1/account/${TENDERLY_USER}/project/${TENDERLY_PROJECT}/fork`; // we don't need this because /simulate has 
     const fromTokenAddress = req.body.fromTokenAddress;
     const toTokenAddress = req.body.toTokenAddress;
     const amount = req.body.amount;
@@ -373,7 +386,6 @@ async function simulate(req, res) {
     // now we need to check if the allowance is enough
     if(allowance < amount){
         // we need to approve the token somehow...
-
         // TODO get approval
 
         const opts = {
@@ -381,142 +393,136 @@ async function simulate(req, res) {
                 'X-Access-Key': TENDERLY_TOKEN,
             }
         }
-        const body = {
-            "network_id": chainID,
-            "block_number": await provider.getBlockNumber(),
-        }
 
-        let forkResponse;
-        await axios.post(TENDERLY_FORK_API, body, opts).then((response) => {
-            forkResponse = response.data;
+        let inchBaseURL = `https://api.1inch.io/v5.0/${chainID}/swap`
+        let inchURL = inchBaseURL + `?fromTokenAddress=${fromTokenAddress}&toTokenAddress=${toTokenAddress}&amount=${amount}&fromAddress=${fromAddress}&slippage=${slippage}&disableEstimate=true`;
+        let inchResponse;
+        await axios.get(inchURL).then((response) => {
+            inchResponse = response.data.tx;
         }).catch((error) => {
             console.log(error);
+            res.send(
+                {
+                    "status": 400,
+                    "details": {
+                        "msg": "Error while calling 1inch API",
+                        "error": SIMULATION_ERROR
+                    }
+                });
         });
 
-        console.log(forkResponse);
-        // example fork response
-        exampleForkResponse = {
-            simulation_fork: {
-              id: 'a46866e9-dee8-48ef-9236-2c441536109a',
-              project_id: '896bd6a6-16fb-4b81-9824-18f83b7bd7f2',
-              network_id: '1',
-              block_number: 16014846,
-              transaction_index: 0,
-              chain_config: {
-                type: 'ethereum',
-                chain_id: 1,
-                homestead_block: 1150000,
-                dao_fork_block: 1920000,
-                eip_150_block: 2463000,
-                eip_150_hash: '0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0',
-                eip_155_block: 2675000,
-                eip_158_block: 2675000,
-                byzantium_block: 4370000,
-                constantinople_block: 7280000,
-                petersburg_block: 7280000,
-                istanbul_block: 9069000,
-                muir_glacier_block: 9200000,
-                berlin_block: 12244000,
-                london_block: 12965000,
-                ethash: {}
-              },
-              fork_config: null,
-              created_at: '2022-11-21T00:36:21.967114861Z',
-              accounts: {
-                '0x0E1E746Fb8e560638E701fDf948b4C5cAC53EcBb': '0x62e4927ca331097738d9d418e3a9aab5fe0b88ac50cae4f2f548427dbf146566',
-                '0x1eb346c7A640A36113da509FB85fD591E517C81E': '0x2beb392b15255a6f1640d7d8d9cd3ed7f1467af73c56868c4eb0084c754c7981',
-                '0x3787E5D2D163ee562214C4B28406f4768cf88030': '0xe7fc3dd78cc7d1e3ce353738002cbccad03fccd9444a4417f1f02ac68effae52',
-                '0x43B278275f473403794b1A13fc1D76D5cB6F5E2D': '0xbead44dd7583ce9b493db64a1844dcc454b49b3a8ec2ce279d4f4336cca87b12',
-                '0x4D0Da2bAD73298E8988e5319c56a4e512876234f': '0x0e71621e360abad341e314fc2b9cab86e099e7c1fd88e94f98da8eb7a290511c',
-                '0x855E561Ea6f9DFD54Ddc59c97351335C377ad890': '0xa210da25dc2be70cd5f9212ab6a674a3c36051cc9e7b8789eaf1c4b6cac0a0eb',
-                '0xB96679a85b304eaC3AfA89962b63Bdf36C5013AB': '0x13c2980a6d78bce46cf29e1e9318e55472c124a2a72ad8a7203b8e82b851e7f9',
-                '0xD6172e5e82482dd64421c9632130f612fB50f0d8': '0x2d51ae9d411bca3df5f55d110bbfd9496d7d0277f1e07b594cbcce6344b41443',
-                '0xE93b6b224d7bDfF7098B8654DcED453F197DF8e4': '0x4adb3eab855d70de89580dc09108a12fe2a1943bfc794134e608cf53796184f1',
-                '0xc702Fe30eE6Ec08305d3717eAAf6Bb09126f38FF': '0xbd661ed45f08b2a0e19a20f9b3f1aef01e83c6cdfaca5941ce4974514815110f'
-              }
-            },
-            root_transaction: {
-              id: '40ec41b4-a652-496c-988e-04746a504daf',
-              project_id: '896bd6a6-16fb-4b81-9824-18f83b7bd7f2',
-              fork_id: 'a46866e9-dee8-48ef-9236-2c441536109a',
-              alias: 'Initialization',
-              description: 'Sets the balance of the fork accounts to 100ETH',
-              internal: true,
-              hash: '0xc5b2c658f5fa236c598a6e7fbf7f21413dc42e2a41dd982eb772b30707cba2eb',
-              state_objects: [
-                [Object], [Object],
-                [Object], [Object],
-                [Object], [Object],
-                [Object], [Object],
-                [Object], [Object]
-              ],
-              network_id: '1',
-              block_number: 16014846,
-              transaction_index: 0,
-              from: '0x0000000000000000000000000000000000000000',
-              to: '0x0000000000000000000000000000000000000000',
-              input: '0x',
-              gas: 30000000,
-              l1_message_sender: '0x0000000000000000000000000000000000000000',
-              l1_block_number: 0,
-              l1_timestamp: 1668990981,
-              gas_price: '0',
-              value: '0',
-              status: true,
-              fork_height: 0,
-              block_hash: '0xbf0f26a8af8bd2ead758feab5a4794b39a1bb882c687bbef5c94873782838b52',
-              nonce: 0,
-              receipt: {
-                transactionHash: '0xc5b2c658f5fa236c598a6e7fbf7f21413dc42e2a41dd982eb772b30707cba2eb',
-                transactionIndex: '0x0',
-                blockHash: '0xbf0f26a8af8bd2ead758feab5a4794b39a1bb882c687bbef5c94873782838b52',
-                blockNumber: '0xf45dff',
-                from: '0x0000000000000000000000000000000000000000',
-                to: '0x0000000000000000000000000000000000000000',
-                cumulativeGasUsed: '0x0',
-                gasUsed: '0x0',
-                effectiveGasPrice: '0x0',
-                contractAddress: null,
-                logs: [],
-                logsBloom: '0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
-                status: '0x1',
-                type: '0x0'
-              },
-              access_list: null,
-              block_header: {
-                number: '0xf45dfe',
-                hash: '0x8e1da3af8c6d6c6d229b33efa1dde31837d659f33a9518ec23552d12b0b0bd94',
-                stateRoot: '0x2ef156114937cc14886d85567f239cd33877d35c2b766d79b77eb025a8345755',
-                parentHash: '0x0abaa44b98772f5cb6849b39999639cb40d60a3557d6c516a6752482622aa2c2',
-                sha3Uncles: '0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347',
-                transactionsRoot: '0x511e9b8bd12e11087e7f5e48b6982e44d822003f045cf1f2a27d2cbab71bd8cb',
-                receiptsRoot: '0x72378baf528719ee096376a2efb18f4e93b40e42374556a446bac5f6c885a1ac',
-                logsBloom: '0xb9b1130751741088f0a85019a3257a395182455905129341009db86a5c00afb31d00b5280089349ac4655a40113917330a28d5081f9ef8140a7b0036f162340746d3917012a28c3c694356b9d52166f606326091cde9ca0181badc8a9a818d211aca06f4220b064038ce5a44294a28d802121059de280e641688eefb285e8d0457a5f5040a63971841edb5454b596e2602c0cc815588146945222c4165b42c1bbb10814b5981786a160fc880c8a086b61ef46a13384a0a03106a44612c2b07035519bd860a1f145a1d3e88221a1b33c520e8d267aa0f08bacb053d3b7904202a68f33d9e310199d292dd721182c98ad8bc280a6ad9cb07521039b892404a59c1',
-                timestamp: '0x637ac7fb',
-                difficulty: '0x0',
-                gasLimit: '0x1c9c380',
-                gasUsed: '0x1066e26',
-                miner: '0x27f011c08be7b4bfd8a635d967274743a85c1588',
-                extraData: '0x',
-                mixHash: '0xae2e5ed6c46b15d5aff7e58e34342e9087a179e87b57ae3cb4bdbf00ab1c6eaa',
-                nonce: '0x0000000000000000',
-                baseFeePerGas: '0x23719e033',
-                size: '0x0',
-                totalDifficulty: '0x0',
-                uncles: null,
-                transactions: null
-              },
-              parent_id: '',
-              created_at: '2022-11-21T00:36:21.974359032Z',
-              timestamp: '2022-11-21T00:36:21.974359032Z',
-              branch_root: false
-            }
-          }
+        // modify the inchResponse here so we can pass it into the simulation API
+        inchResponse.gas = 8000000;
+        inchResponse.gasPrice = 0;
+        inchResponse.input = inchResponse.data;
+        inchResponse.block_number = null;
+        inchResponse.save = true;
+        inchResponse.network_id = chainID;
+        inchResponse.simulation_type = "quick";
+        // may not work for every token since some are not ERC20 standard
+        let stateObjectKey_allowances = "_allowances[" + fromAddress.toLowerCase() + "][0x1111111254EEB25477B68fb85Ed929f73A960582]".toLowerCase();
+        let stateObjectKeyAllowance = "allowance[" + fromAddress.toLowerCase() + "][0x1111111254EEB25477B68fb85Ed929f73A960582]".toLowerCase();
+        // now we can encode the state object
+        // let exampleRequest = {
+        //     "networkID": "1",
+        //     "blockNumber": "15999120",
+        //     "stateOverrides": {
+        //         "0x111111111117dc0aa78b770fa6a738034120c302": {
+        //             "value": {
+        //                 "_allowances[0x111111111117dC0aa78b770fA6A738034120C302][0x2ae41f46be3e8870d49bfd361b74ac5ad510c1e2]": "100000000000000000000000"
+        //             }
+        //         }
+        //     }
+        // }
+        let blockNumber = await provider.getBlockNumber();
+        // state overrides don't work with wETH :/ it also doesn't work for proxies sometimes (like USDC)
+        // it also requires super specific variable naming, so even though it'd be better to use a fork that would be messy
+        let stateObject = {
+            "networkID": chainID,
+            "blockNumber": blockNumber.toString(),
+            "stateOverrides": {
+                [fromTokenAddress]: {
+                    "value": {
+                        [stateObjectKey_allowances]: MAX_ALLOWANCE,
+                        [stateObjectKeyAllowance]: MAX_ALLOWANCE
+                            },
+                        }
+                    }
+                };
+        let encodedStateObject;
+        await axios.post(TENDERLY_ENCODING_API, stateObject, opts).then((response) => {
+            encodedStateObject = response.data;
+            // console.log(JSON.stringify(encodedStateObject));
+        }).catch((error) => {
+            console.log(error);
+            res.send(
+                {
+                    "status": 400,
+                    "details": {
+                        "msg": "Error while encoding state object",
+                        "error": SIMULATION_ERROR
+                    }
+                });
+        });
 
-          // Append the simulation_fork id to a file so we can delete them later
+
+        
+        //state_objects is a map[address]StateObject
+        // but first stateOverrides[fromTokenAddress].value needs to be changed to stateOverrides[fromTokenAddress].storage
+        encodedStateObject.stateOverrides[fromTokenAddress].storage = encodedStateObject.stateOverrides[fromTokenAddress].value;
+        inchResponse.state_objects = encodedStateObject.stateOverrides
+
+
+        await axios.post(TENDERLY_SIMULATION_API, inchResponse, opts).then((response) => {
+            simulateResponse = response.data;
+        }).catch((error) => {
+            console.log(error);
+            res.send({
+                status: 400,
+                details: {
+                    msg: "Error simulating transaction",
+                    error: SIMULATION_ERROR
+                }
+
+            })
+        });
+
+        // console.log(simulateResponse);
+        if(simulateResponse.simulation.status === true){
+            res.send({
+                status: 200,
+                details: {
+                    msg: "Simulation Successful",
+                    simulationID: simulateResponse.simulation.id,
+                    success: simulateResponse.simulation.status,
+                }
+            })
+        } else {
+            res.send({
+                status: 200,
+                details: {
+                    msg: "Simulation Failed, may require a fork or custom state override",
+                    simulationID: simulateResponse.simulation.id,
+                    success: simulateResponse.simulation.status,
+                }
+            })
+        }
 
     } 
     else {
+        // check if the from Token address isn't the same as the to Token address
+        if (fromTokenAddress.toLowerCase() == toTokenAddress.toLowerCase()) {
+            res.send(
+                {
+                    "status": 400,
+                    "details": {
+                        "msg": "From and To Tokens can't be the same",
+                        "error": SIMULATION_ERROR
+                    }
+                }
+            )
+        }
+
         // we can just call the swap API and simulate the transaction
         let inchBaseURL = `https://api.1inch.io/v5.0/${chainID}/swap`
         let inchURL = inchBaseURL + `?fromTokenAddress=${fromTokenAddress}&toTokenAddress=${toTokenAddress}&amount=${amount}&fromAddress=${fromAddress}&slippage=${slippage}&disableEstimate=true`;
@@ -525,6 +531,14 @@ async function simulate(req, res) {
             inchResponse = response.data.tx;
         }).catch((error) => {
             console.log(error);
+            res.send(
+                {
+                    "status": 400,
+                    "details": {
+                        "msg": "Error while calling 1inch API",
+                        "error": SIMULATION_ERROR
+                    }
+                });
         });
 
         const opts = {
@@ -539,18 +553,27 @@ async function simulate(req, res) {
         inchResponse.block_number = null;
         inchResponse.save = true;
         inchResponse.network_id = chainID;
+        inchResponse.simulation_type = "quick"; // we don't need contract source code
 
         let simulateResponse;
         await axios.post(TENDERLY_SIMULATION_API, inchResponse, opts).then((response) => {
             simulateResponse = response.data;
         }).catch((error) => {
             console.log(error.response.data);
+            res.send({
+                "status": 400,
+                "details": {
+                    "msg": "Error while simulating the transaction",
+                    "error": SIMULATION_ERROR
+                }
+            })
         });
 
         // now we can return the simulation id
         res.send({
             status: 200,
             details: {
+                msg: "Simulation Successful",
                 simulationID: simulateResponse.simulation.id,
                 success: simulateResponse.simulation.status,
             }
