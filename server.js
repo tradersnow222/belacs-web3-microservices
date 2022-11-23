@@ -344,7 +344,7 @@ async function simulate(req, res) {
     const toTokenAddress = req.body.toTokenAddress;
     const amount = req.body.amount;
     const fromAddress = req.body.fromAddress;
-    const slippage = req.body.slippage;
+    const slippage = req.body.slippage == null ? 50 : req.body.slippage;
     const chainID = req.body.chainID;
 
     let provider;
@@ -377,14 +377,15 @@ async function simulate(req, res) {
     // first lets call the allowance API
     const allowanceURL = ALLOWANCE_GET_API + "?tokenAddress=" + fromTokenAddress + "&walletAddress=" + fromAddress;
     let allowance;
-    await axios.get(allowanceURL).then((response) => {
-        allowance = response.data.allowance;
-    }).catch((error) => {
-        console.log(error);
-    });
+    if(fromTokenAddress.toLowerCase() != '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'.toLowerCase())
+        await axios.get(allowanceURL).then((response) => {
+            allowance = response.data.allowance;
+        }).catch((error) => {
+            console.log(error);
+        });
 
     // now we need to check if the allowance is enough
-    if(allowance < amount){
+    if(allowance < amount && fromTokenAddress.toLowerCase() != '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'.toLowerCase()){
         // we need to approve the token somehow...
         // TODO get approval
 
