@@ -27,6 +27,7 @@ const OPTIMISM_RPC = "https://mainnet.optimism.io";
 // const HARMONY_RPC = "https://api.s0.b.hmny.io";
 const AURORA_RPC = "https://mainnet.aurora.dev";
 const KLAYTN_RPC = "https://node-api.klaytnapi.com/v1/klaytn";
+const zkSYNC_RPC = "https://mainnet.era.zksync.io";
 
 const IMPORT_ERROR = 4001;
 const ACCOUNT_ERROR = 4002;
@@ -198,12 +199,13 @@ function getAllAllowances(req, res) {
     const customRPC = req.query.customRPC;
     const chainID = req.params.chainID;
     let provider;
+    console.log(chainID)
     switch (chainID) {
         case "1":
             provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
             break;
 
-        case "custom":
+        case "Custom":
             provider = new ethers.providers.JsonRpcProvider(customRPC);
             break;
         default:

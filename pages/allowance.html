@@ -28,7 +28,8 @@
         // we want to display the allowances in a table grouped by token
         function getAllAllowances() {
             var address = document.getElementById("ownerAllAllowance").value;
-            var url = "/v1.0/" + chainID + "/getAllAllowances?address=" + address;
+            var customRPC = document.getElementById("customChainIDInput").value;
+            var url = "/v1.0/" + chainID + "/getAllAllowances?address=" + address + "&customRPC=" + customRPC;
             $.get(url, function(data, status){
                 var allowances = data.details.allowances;
                 var table = "<table class='table table-striped'><thead><tr><th>Token</th><th>Spender</th><th>Allowance</th><th>Block Number</th></tr></thead><tbody>";
