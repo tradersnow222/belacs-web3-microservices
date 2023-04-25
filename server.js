@@ -130,7 +130,15 @@ function getSingleAllowance(req, res) {
         case "1":
             provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
             break;
-
+        case "56":
+            provider = new ethers.providers.JsonRpcProvider(BSC_RPC);
+            break;
+        case "137":
+            provider = new ethers.providers.JsonRpcProvider(POLYGON_RPC);
+            break;
+        case "324":
+            provider = new ethers.providers.JsonRpcProvider(zkSYNC_RPC);
+            break;
         case "custom":
             provider = new ethers.providers.JsonRpcProvider(customRPC);
             break;
@@ -204,7 +212,15 @@ function getAllAllowances(req, res) {
         case "1":
             provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
             break;
-
+        case "56":
+            provider = new ethers.providers.JsonRpcProvider(BSC_RPC);
+            break;
+        case "137":
+            provider = new ethers.providers.JsonRpcProvider(POLYGON_RPC);
+            break;
+        case "324":
+            provider = new ethers.providers.JsonRpcProvider(zkSYNC_RPC);
+            break;
         case "Custom":
             provider = new ethers.providers.JsonRpcProvider(customRPC);
             break;

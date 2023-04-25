@@ -31,6 +31,12 @@
             var customRPC = document.getElementById("customChainIDInput").value;
             var url = "/v1.0/" + chainID + "/getAllAllowances?address=" + address + "&customRPC=" + customRPC;
             $.get(url, function(data, status){
+                // if it's a 400 error then display the error message
+                if (data.status == 400) {
+                    document.getElementById("result").innerHTML = data.message;
+                    return;
+                }
+                // if it's a 200 then display the table
                 var allowances = data.details.allowances;
                 var table = "<table class='table table-striped'><thead><tr><th>Token</th><th>Spender</th><th>Allowance</th><th>Block Number</th></tr></thead><tbody>";
                 for (var owner in allowances) {
@@ -71,9 +77,10 @@
             <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Select Chain ID
             <span class="caret"></span></button>
             <ul class="dropdown-menu">
-                <li><a href="#" onclick="chainID = 1">1</a></li>
-                <!-- <li><a href="#" onclick="chainID = 56">56</a></li>
-                <li><a href="#" onclick="chainID = 137">137</a></li> -->
+                <li><a href="#" onclick="chainID = 1">1 - Ethereum</a></li>
+                <li><a href="#" onclick="chainID = 56">56 - BNB chain</a></li>
+                <li><a href="#" onclick="chainID = 137">137 - Polygon</a></li>
+                <li><a href="#" onclick="chainID = 324">324 - zkSync</a></li>
                 <li><a href="#" onclick="chainID = 'custom'">Custom</a></li>
             </ul>
         </div>
